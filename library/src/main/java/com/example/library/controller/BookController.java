@@ -25,9 +25,9 @@ public class BookController {
 
     @PostMapping("/books")
 
-    public ResponseEntity<BookModel> saveBook(@RequestBody @Valid RecordBookDto  RecordBookDto){
+    public ResponseEntity<BookModel> saveBook(@RequestBody @Valid RecordBookDto  recordBookDto){
         var bookModel = new BookModel();
-        BeanUtils.copyProperties(RecordBookDto, bookModel);
+        BeanUtils.copyProperties(recordBookDto, bookModel);
         return  ResponseEntity.status(HttpStatus.CREATED).body(bookRepository.save(bookModel));
 
     }
@@ -44,16 +44,15 @@ public class BookController {
         return book.<ResponseEntity<Object>>map(bookModel -> ResponseEntity.status(HttpStatus.OK).body(bookModel)).
                 orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book not Found"));
     }
-
-    @PutMapping("/book/{id}")
-    public ResponseEntity<Object> updateBook(@PathVariable(value = "id")UUID id, @RequestBody @Valid RecordBookDto RecordBookDto){
+    @PutMapping("/books/{id}")
+    public ResponseEntity<Object> updateBook(@PathVariable(value = "id")UUID id, @RequestBody @Valid RecordBookDto recordBookDto){
             return bookRepository.findById(id).map(book -> {
-                BeanUtils.copyProperties(RecordBookDto, book);
+                BeanUtils.copyProperties(recordBookDto, book);
                 return ResponseEntity.status(HttpStatus.OK).body((Object) bookRepository.save(book));
             }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book not Founded"));
     }
 
-    @DeleteMapping("/book/{id}")
+    @DeleteMapping("/books/{id}")
     public ResponseEntity<Object> deleVook(@PathVariable(value = "id")UUID id){
         return bookRepository.findById(id).map(book -> {
             bookRepository.delete(book);
