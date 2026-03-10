@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/loans")
-
+@CrossOrigin(origins = "*")
 public class LoanController {
 
 

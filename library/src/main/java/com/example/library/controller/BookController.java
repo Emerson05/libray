@@ -17,6 +17,7 @@ import java.util.UUID;
 
 @Controller
 @RestController
+@CrossOrigin(origins = "*")
 public class BookController {
 
     @Autowired
