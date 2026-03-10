@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Digital Library</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="grey lighten-4">
+
+    <nav class="blue darken-3">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo">Library API</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="#modal-loan" class="modal-trigger">New Loan</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 50px;">
+        <h4 class="grey-text text-darken-2">Books Available</h4>
+        <div id="book-list" class="row">
+            <div class="center-align" id="loading">
+                <div class="preloader-wrapper big active">
+                    <div class="spinner-layer spinner-blue-only">
+                        <div class="circle-clipper left"><div class="circle"></div></div>
+                        <div class="gap-patch"><div class="circle"></div></div>
+                        <div class="circle-clipper right"><div class="circle"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+        <h4 class="grey-text text-darken-2">Active Loans</h4>
+        <table class="highlight white z-depth-1">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Book</th>
+                    <th>Loan Date</th>
+                    <th>Return Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="loan-list">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="modal-loan" class="modal">
+        <div class="modal-content">
+            <h4>Register Loan</h4>
+            <div class="row">
+                <div class="input-field col s12">
+                    <select id="user-select">
+                        <option value="" disabled selected>Choose a user</option>
+                    </select>
+                    <label>User</label>
+                </div>
+                <div class="input-field col s12">
+                    <select id="book-select">
+                        <option value="" disabled selected>Choose a book</option>
+                    </select>
+                    <label>Book</label>
+                </div>
+                <div class="input-field col s12">
+                    <input id="days-input" type="number" class="validate">
+                    <label for="days-input">Return Period (Days)</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-red btn-flat">Cancel</a>
+            <a href="#!" onclick="saveLoan()" class="waves-effect waves-green btn blue">Confirm</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    
+    <script>
+        const BOOKS_URL = "http://localhost:8080/books";
+        const USERS_URL = "http://localhost:8080/users";
+        const LOANS_URL = "http://localhost:8080/loans";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var modals = document.querySelectorAll('.modal');
+            M.Modal.init(modals);
+            
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Initial load
+            fetchBooks();
+            fetchUsers();
+            fetchLoans();
+        });
+
+        async function fetchBooks() {
+            try {
+                const response = await fetch(BOOKS_URL);
+                const books = await response.json();
+                const bookList = document.getElementById('book-list');
+                const bookSelect = document.getElementById('book-select');
+                
+                document.getElementById('loading').style.display = 'none';
+                bookList.innerHTML = ""; 
+
+                books.forEach(book => {
+                    const bookName = book.title || book.name || "Untitled";
+                    bookList.innerHTML += `
+                        <div class="col s12 m4">
+                            <div class="card hoverable">
+                                <div class="card-content">
+                                    <span class="card-title blue-text text-darken-2">${bookName}</span>
+                                    <p><b>Author:</b> ${book.author}</p>
+                                    <p><b>ISBN:</b> ${book.isbn}</p>
+                                    <p><b>Pages:</b> ${book.pages}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                    bookSelect.innerHTML += `<option value="${book.idBook}">${bookName}</option>`;
+                });
+                M.FormSelect.init(bookSelect); 
+            } catch (error) {
+                console.error("Error fetching books:", error);
+            }
+        }
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch(USERS_URL);
+                const users = await response.json();
+                const userSelect = document.getElementById('user-select');
+                users.forEach(user => {
+                    userSelect.innerHTML += `<option value="${user.idUser}">${user.name}</option>`;
+                });
+                M.FormSelect.init(userSelect);
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        }
+
+        async function fetchLoans() {
+            try {
+                const response = await fetch(LOANS_URL);
+                const loans = await response.json();
+                const loanList = document.getElementById('loan-list');
+                loanList.innerHTML = ""; 
+
+                loans.forEach(loan => {
+                    loanList.innerHTML += `
+                        <tr>
+                            <td>${loan.user.name}</td>
+                            <td>${loan.book.title || loan.book.name}</td>
+                            <td>${loan.loanDate}</td>
+                            <td>${loan.returnDate}</td>
+                            <td>
+                                <button class="btn-small red waves-effect" onclick="deleteLoan('${loan.idLoan}')">
+                                    <i class="material-icons">delete_sweep</i>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (error) {
+                console.error("Error fetching loans:", error);
+            }
+        }
+
+        async function saveLoan() {
+            const userId = document.getElementById('user-select').value;
+            const bookId = document.getElementById('book-select').value;
+            const daysToReturn = document.getElementById('days-input').value;
+
+            if(!userId || !bookId || !daysToReturn) {
+                M.toast({html: 'Please fill all fields', classes: 'orange'});
+                return;
+            }
+
+            const loanData = {
+                userId: userId,
+                bookId: bookId,
+                daysToReturn: parseInt(daysToReturn)
+            };
+
+            try {
+                const response = await fetch(LOANS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loanData)
+                });
+
+                if (response.ok) {
+                    M.toast({html: 'Loan registered successfully!', classes: 'green'});
+                    M.Modal.getInstance(document.getElementById('modal-loan')).close();
+                    fetchLoans(); 
+                } else {
+                    const errorMsg = await response.text();
+                    M.toast({html: 'Conflict: ' + errorMsg, classes: 'red'});
+                }
+            } catch (error) {
+                M.toast({html: 'Server connection failed', classes: 'red'});
+            }
+        }
+
+        async function deleteLoan(id) {
+            if (confirm("Confirm book return (delete loan)?")) {
+                try {
+                    const response = await fetch(`${LOANS_URL}/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        M.toast({html: 'Book returned!', classes: 'green'});
+                        fetchLoans();
+                    }
+                } catch (error) {
+                    M.toast({html: 'Error connecting to server', classes: 'red'});
+                }
+            }
+        }
+    </script>
+</body>
+</html>
