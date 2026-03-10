@@ -68,3 +68,4 @@ Using IntelliJ IDEA or via terminal:
 4. Run the Front-end
 Simply open the index.html file in any modern web browser.
 
+<img width="1918" height="946" alt="image" src="https://github.com/user-attachments/assets/1be22d9c-563b-4204-b097-1262c83ba535" />
